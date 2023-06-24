@@ -68,7 +68,7 @@ public class ServerProgram {
                         try {
                             sios.get(index).os.write(word + ":" + count);
                         } catch (Exception e) {
-                            System.out.println(e.toString());
+                            e.printStackTrace();
                         }
                     });
 
@@ -84,7 +84,7 @@ public class ServerProgram {
 
             // server.close();
         } catch (Exception e) {
-            System.out.println(e.toString());
+            e.printStackTrace();
         } finally {
         }
     }

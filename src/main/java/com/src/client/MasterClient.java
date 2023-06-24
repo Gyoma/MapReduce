@@ -5,6 +5,7 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
@@ -27,7 +28,8 @@ public class MasterClient {
         try {
             handlers.put(address, new SocketHandler(address, 10325, (arg) -> {return this.handleResponse(arg); }));
         } finally {
-            lock.unlock();
+            if (lock.isHeldByCurrentThread())
+                lock.unlock();
         }
     }
 
@@ -40,7 +42,7 @@ public class MasterClient {
     };
 
     public void start() throws Exception {
-        String[] addresses = (String[]) Collections.list(handlers.keys()).toArray();
+        List<String> addresses = Collections.list(handlers.keys());
         ArrayList<SocketHandler> values = new ArrayList<>(handlers.values());
         
         for (SocketHandler handler : values)
@@ -89,7 +91,8 @@ public class MasterClient {
         try {
             // ...
         } finally {
-            lock.unlock();
+            if (lock.isHeldByCurrentThread())
+                lock.unlock();
         }
 
         return "";

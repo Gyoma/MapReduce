@@ -13,6 +13,10 @@ masterComputer="tp-1a201-32"
 
 testFileName="test.txt"
 
+command0=("ssh-copy-id" "$login@$masterComputer")
+echo ${command0[*]}
+"${command0[@]}"
+
 for c in ${computers[@]}; do
   command0=("ssh" "$login@$c" "lsof -ti tcp:$port | xargs kill -9")
   command1=("ssh" "$login@$c" "rm -rf $remoteFolder;mkdir $remoteFolder")

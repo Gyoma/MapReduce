@@ -34,10 +34,11 @@ public class SocketHandler extends Thread {
         try {
             this.sio.os.write(data);
         } catch(Exception e) {
-            System.out.println(e.toString());
+            e.printStackTrace();
         }
         finally {
-            this.lock.unlock();
+            if (this.lock.isHeldByCurrentThread())
+                this.lock.unlock();
         }
     }
 
@@ -61,7 +62,8 @@ public class SocketHandler extends Thread {
                 this.running = false;
             }
             finally {
-                this.lock.unlock();
+                if (this.lock.isHeldByCurrentThread())
+                    this.lock.unlock();
             }
         }
     }
