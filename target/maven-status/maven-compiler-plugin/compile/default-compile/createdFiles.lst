@@ -1,0 +1,7 @@
+com/src/server/ServerProgram.class
+com/src/client/MasterClient.class
+com/src/client/ClientProgram.class
+com/src/utils/SocketHandler.class
+com/src/utils/LogFormatter.class
+com/src/utils/Command.class
+com/src/utils/SocketIO.class

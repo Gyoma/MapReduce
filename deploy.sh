@@ -4,8 +4,8 @@ mvn package
 
 login="agolovin-22"
 remoteFolder="/tmp/$login/"
-masterProgram="master-node.jar"
-serverProgram="server-node.jar"
+masterProgram="master-program.jar"
+serverProgram="server-program.jar"
 
 port="10325"
 computers=("tp-1a201-33" "tp-1a201-36" "tp-1a201-37" "tp-1a201-38")
