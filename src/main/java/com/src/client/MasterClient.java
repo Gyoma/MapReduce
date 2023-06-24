@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Logger;
 
 import com.src.utils.Command;
 import com.src.utils.SocketHandler;
@@ -14,6 +15,8 @@ public class MasterClient {
     Hashtable<String, SocketHandler> handlers = new Hashtable<String, SocketHandler>();
     ReentrantLock lock = new ReentrantLock();
     String resourcePath = "";
+
+    static Logger logger = Logger.getLogger("Client");
 
     public MasterClient(String resourcePath) {
         this.resourcePath = resourcePath;
@@ -46,7 +49,7 @@ public class MasterClient {
         // Initialize
         {
             sendToAll(Command.INITIALIZE.label());
-            sendToAll(String.join(",", addresses));
+            sendToAll(String.join(";", addresses));
             sendToAll(Command.END.label());
         }
 

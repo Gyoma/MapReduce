@@ -7,10 +7,10 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import com.src.utils.Command;
 import com.src.utils.SocketIO;
-import com.src.utils.SocketThread;
+import com.src.utils.SocketHandler;
 
 public class ServerProgram {
-    public static Hashtable<String, SocketThread> handlers = new Hashtable<String, SocketThread>();
+    public static Hashtable<String, SocketHandler> handlers = new Hashtable<String, SocketHandler>();
     public static ArrayList<SocketIO> sios = new ArrayList<SocketIO>();
     public static Hashtable<String, Integer> shufflingWordCounter = new Hashtable<String, Integer>();
     public static Hashtable<String, Integer> wordCounter = new Hashtable<String, Integer>();
@@ -30,11 +30,11 @@ public class ServerProgram {
 
                     // List of other servers
                     line = msio.is.readLine();
-                    String[] addresses = line.split(",");
+                    String[] addresses = line.split(";");
 
                     for (String address : addresses) {
 
-                        SocketThread st = new SocketThread(address, 10325, (data) -> {
+                        SocketHandler st = new SocketHandler(address, 10325, (data) -> {
                             lock.lock();
                             
                             String[] pair = data.split(":");
