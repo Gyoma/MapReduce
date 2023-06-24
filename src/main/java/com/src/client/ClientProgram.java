@@ -23,9 +23,6 @@ public class ClientProgram {
 
     public static void main(String[] args) {
 
-        // Server Host
-        // final String serverHost = "tp-1a201-26.enst.fr";
-        
         LogManager.getLogManager().reset();
         logger.setLevel(Level.INFO);
 
@@ -81,6 +78,7 @@ public class ClientProgram {
         }
 
         logger.log(Level.INFO, "Stopping client program...");
+        master.stop();
     }
 
 }

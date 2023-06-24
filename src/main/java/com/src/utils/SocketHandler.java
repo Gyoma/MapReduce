@@ -33,6 +33,8 @@ public class SocketHandler extends Thread {
         
         try {
             this.sio.os.write(data);
+            this.sio.os.newLine();
+            this.sio.os.flush();
         } catch(Exception e) {
             e.printStackTrace();
         }

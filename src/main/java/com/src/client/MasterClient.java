@@ -77,6 +77,7 @@ public class MasterClient {
         // Shuffling & Reducing
         {
             sendToAll(Command.SHUFFLING.label());
+            sendToAll(Command.QUIT.label());
         }
     }
 

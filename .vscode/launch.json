@@ -18,7 +18,8 @@
             "projectName": "project",
             "args": [
                 "-p=test.txt",
-                "-s=tp-1a201-33;tp-1a201-36;tp-1a201-37;tp-1a201-38"
+                // "-s=tp-1a201-33;tp-1a201-36;tp-1a201-37;tp-1a201-38"
+                "-s=127.0.0.1"
             ]
         },
         {
