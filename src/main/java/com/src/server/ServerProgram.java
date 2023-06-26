@@ -10,6 +10,14 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 
 import com.src.utils.Command;
 import com.src.utils.SocketIO;
@@ -23,12 +31,26 @@ public class ServerProgram {
     private static ReentrantLock lock = new ReentrantLock();
     private static Integer finishedCount = 0;
     private static Command nextCommand = Command.INITIALIZE;
+    private static Logger logger = Logger.getLogger("Server");
 
     public static void main(String args[]) {
 
         ServerSocket server = null;
+
+        Options options = new Options();
+        Option portOpt = new Option("p", "port", true, "");
+        options.addOption(portOpt);
+
+        logger.log(Level.INFO, String.join(" ", args));
+
         try {
-            server = new ServerSocket(10325);
+            CommandLineParser parser = new DefaultParser();
+            CommandLine cmd = parser.parse(options, args, false);
+            Integer port = Integer.parseInt(cmd.getOptionValue("port", "10325"));
+
+            logger.log(Level.INFO, "Starting server program on port " + Integer.toString(port) + " ...");
+
+            server = new ServerSocket(port);
             SocketIO msio = new SocketIO(server.accept());
 
             while (true) {
@@ -42,7 +64,7 @@ public class ServerProgram {
 
                     for (String address : addresses) {
 
-                        SocketHandler st = new SocketHandler(address, 10325, (data) -> {
+                        SocketHandler st = new SocketHandler(address, port, (data) -> {
                             lock.lock();
 
                             if (data.equals(Command.END.label())) {
@@ -86,7 +108,7 @@ public class ServerProgram {
                 } else if (nextCommand == Command.SHUFFLING && line.equals(Command.SHUFFLING.label())) {
 
                     shufflingWordCounter.forEach((word, count) -> {
-                        Integer index = word.hashCode() % sios.size();
+                        Integer index = (word.hashCode() % sios.size());
 
                         try {
                             BufferedWriter os = sios.get(index).os;
@@ -112,7 +134,8 @@ public class ServerProgram {
                         }
                     });
 
-                    while (nextCommand == Command.SHUFFLING);
+                    while (nextCommand == Command.SHUFFLING)
+                        ;
 
                     // while(!msio.is.readLine().equals(Command.END.label()));
                 } // else if (line == Command.REDUCING.label()) {

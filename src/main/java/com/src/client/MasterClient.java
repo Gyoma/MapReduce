@@ -26,7 +26,7 @@ public class MasterClient {
     public void addConnection(String address, int port) throws UnknownHostException, IOException {
         lock.lock();
         try {
-            handlers.put(address, new SocketHandler(address, 10325, (arg) -> {return this.handleResponse(arg); }));
+            handlers.put(address, new SocketHandler(address, port, (arg) -> {return this.handleResponse(arg); }));
         } finally {
             if (lock.isHeldByCurrentThread())
                 lock.unlock();

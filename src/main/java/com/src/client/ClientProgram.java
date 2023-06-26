@@ -39,32 +39,33 @@ public class ClientProgram {
             handler.setFormatter(new LogFormatter());
 
         Options options = new Options();
-        Option so = new Option("s", "servers", true, "");
-        options.addOption(so);
-        Option po = new Option("p", "path", true, "");
-        options.addOption(po);
-
-        CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = null;
+        Option serversOpt = new Option("s", "servers", true, "");
+        options.addOption(serversOpt);
+        Option portOpt = new Option("p", "port", true, "");
+        options.addOption(portOpt);
+        Option pathOpt = new Option("path", "path", true, "");
+        options.addOption(pathOpt);
 
         logger.log(Level.INFO, String.join(" ", args));
 
-        logger.log(Level.INFO, "Starting client program...");
-
         try {
-            cmd = parser.parse(options, args, false);
+            CommandLineParser parser = new DefaultParser();
+            CommandLine cmd = parser.parse(options, args, false);
+            Integer port = Integer.parseInt(cmd.getOptionValue("port", "10325"));
 
-            logger.log(Level.INFO, "File path: " + cmd.getOptionValue('p', ""));
-            master = new MasterClient(cmd.getOptionValue('p', ""));
+            logger.log(Level.INFO, "Starting client program on port " + Integer.toString(port) + " ...");
+            logger.log(Level.INFO, "File path: " + cmd.getOptionValue("path", ""));
+
+            master = new MasterClient(cmd.getOptionValue("path", ""));
 
             if (cmd.hasOption('s')) {
-                String[] addresses = cmd.getOptionValue('s', "").split(";");
+                String[] addresses = cmd.getOptionValue("servers", "").split(";");
 
                 logger.log(Level.INFO, "Processing the following addresses:\n" + String.join("\n", addresses));
 
                 for (String address : addresses) {
                     logger.log(Level.INFO, "Starting a handler for " + address);
-                    master.addConnection(address, 10325);
+                    master.addConnection(address, port);
                 }
 
                 logger.log(Level.INFO, "Starting the master");
