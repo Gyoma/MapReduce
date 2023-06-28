@@ -55,6 +55,7 @@ public class ServerProgram {
 
             while (true) {
                 String line = msio.is.readLine();
+                logger.log(Level.INFO, "From master: " + line);
 
                 if (nextCommand == Command.INITIALIZE && line.equals(Command.INITIALIZE.label())) {
 
