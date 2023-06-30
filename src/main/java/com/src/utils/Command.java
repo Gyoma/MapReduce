@@ -6,6 +6,7 @@ public enum Command {
     SHUFFLING("SHUFFLING"),
     REDUCING("REDUCING"),
     END("END"),
+    OK("OK"),
     QUIT("QUIT");
 
     private final String label;

@@ -1,6 +1,9 @@
 package com.src.client;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -22,6 +25,10 @@ public class ClientProgram {
     static Logger logger = Logger.getLogger("Client");
 
     public static void main(String[] args) {
+
+        // args = new String[]{"-p=10325",
+        //         "-path=CC-MAIN-20230320211022-20230321001022-00511.warc.wet",
+        //         "-s=127.0.0.1:10333;127.0.0.1:10334"};
 
         LogManager.getLogManager().reset();
         logger.setLevel(Level.INFO);
@@ -51,9 +58,9 @@ public class ClientProgram {
         try {
             CommandLineParser parser = new DefaultParser();
             CommandLine cmd = parser.parse(options, args, false);
-            Integer port = Integer.parseInt(cmd.getOptionValue("port", "10325"));
+            //Integer port = Integer.parseInt(cmd.getOptionValue("port", "10325"));
 
-            logger.log(Level.INFO, "Starting client program on port " + Integer.toString(port) + " ...");
+            logger.log(Level.INFO, "Starting client program...");
             logger.log(Level.INFO, "File path: " + cmd.getOptionValue("path", ""));
 
             master = new MasterClient(cmd.getOptionValue("path", ""));
@@ -63,8 +70,12 @@ public class ClientProgram {
 
                 logger.log(Level.INFO, "Processing the following addresses:\n" + String.join("\n", addresses));
 
-                for (String address : addresses) {
-                    logger.log(Level.INFO, "Starting a handler for " + address);
+                for (String data : addresses) {
+                    String[] pair = data.split(":");
+                    String address = pair[0];
+                    int port = Integer.parseInt(pair[1]);
+
+                    logger.log(Level.INFO, "Starting a handler for " + address + " on port " + port);
                     master.addConnection(address, port);
                 }
 
@@ -80,6 +91,7 @@ public class ClientProgram {
 
         logger.log(Level.INFO, "Stopping client program...");
         master.stop();
+        logger.log(Level.INFO, "Client program stopped.");
     }
 
 }

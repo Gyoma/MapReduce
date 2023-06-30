@@ -17,8 +17,8 @@
             "mainClass": "com.src.client.ClientProgram",
             "projectName": "project",
             "args": [
-                "-p=test.txt",
-                // "-s=tp-1a201-33;tp-1a201-36;tp-1a201-37;tp-1a201-38"
+                "-p=10333",
+                "-path=test.txt",
                 "-s=127.0.0.1"
             ]
         },
@@ -27,7 +27,10 @@
             "name": "ServerProgram",
             "request": "launch",
             "mainClass": "com.src.server.ServerProgram",
-            "projectName": "project"
+            "projectName": "project",
+            "args": [
+                "-p=10333"
+            ]
         }
     ]
 }

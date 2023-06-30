@@ -3,16 +3,15 @@ package com.src.utils;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class SocketHandler extends Thread {
-    SocketIO sio = null;
-    boolean running = false;
-    Function<String, String> callback = null;
-    ReentrantLock lock = new ReentrantLock();
+    private SocketIO sio = null;
+    private final AtomicBoolean running = new AtomicBoolean(true);
+    private Consumer<String> callback = null;
 
-    public SocketHandler(String address, int port, Function<String, String> callback) throws UnknownHostException, IOException {
+    public SocketHandler(String address, int port, Consumer<String> callback) throws UnknownHostException, IOException {
         this.callback = callback;
         this.sio = new SocketIO(new Socket(address, port));
     }
@@ -21,16 +20,26 @@ public class SocketHandler extends Thread {
     }
 
     public boolean running() {
-        return this.running;
+        return this.running.get();
     }
 
     public void stopRunning() {
-        this.running = false;
+        this.running.set(false);
     }
 
-    public void send(String data) {
-        this.lock.lock();
+    public synchronized String read() {
+        String line = null;
         
+        try {
+            line = this.sio.is.readLine();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        return line;
+    }
+
+    public synchronized void send(String data) {
         try {
             this.sio.os.write(data);
             this.sio.os.newLine();
@@ -38,35 +47,29 @@ public class SocketHandler extends Thread {
         } catch(Exception e) {
             e.printStackTrace();
         }
-        finally {
-            if (this.lock.isHeldByCurrentThread())
-                this.lock.unlock();
-        }
     }
 
     @Override
     public void run() {
-
-        this.running = true;
-        while (this.running) {
+        while (this.running.get()) {
             try {
-                if (this.sio.socket.getInputStream().available() == 0)
-                    continue;
+                String line = this.sio.is.readLine();
 
-                this.lock.lock();
-                String data = callback.apply(this.sio.is.readLine());
-
-                if (!data.isEmpty())
-                    send(data);
-
+                if (line != null && line.length() > 0)
+                    callback.accept(line);
             } catch (Exception e) {
                 e.printStackTrace();
-                this.running = false;
+                this.running.set(false);
             }
-            finally {
-                if (this.lock.isHeldByCurrentThread())
-                    this.lock.unlock();
-            }
+        }
+
+        try {
+            sio.is.close();
+            sio.os.close();
+            sio.socket.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
     }
 }
