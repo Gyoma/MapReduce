@@ -4,10 +4,13 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -28,13 +31,13 @@ import com.src.utils.SocketIO;
 
 public class Server {
     private HashMap<String, SocketHandler> handlerTable = new HashMap<String, SocketHandler>();
-    private HashMap<String, SocketIO> sios = new HashMap<String, SocketIO>();
     private HashMap<String, Integer> shufflingWordCounter = new HashMap<String, Integer>();
     private HashMap<String, Integer> wordCounter = new HashMap<String, Integer>();
-    private final AtomicInteger finishedCount = new AtomicInteger(0);
-    private String localAddress = null;
+    private final AtomicInteger endCount = new AtomicInteger(0);
+    private final AtomicInteger okCount = new AtomicInteger(0);
     private final AtomicReference<Command> nextCommand = new AtomicReference<>(Command.INITIALIZE);
     private Logger logger = Logger.getLogger("Server");
+    private String localAddress = null;
     private String[] args = null;
 
     public Server(String[] args) {
@@ -101,49 +104,34 @@ public class Server {
                     localAddress = cmd.getOptionValue("address");
                     String[] addresses = cmd.getOptionValue("servers").split(";");
 
-                    for (String adr : addresses) {
-                        String[] pair = adr.split(":");
-                        String address = pair[0];
-                        Integer port = Integer.parseInt(pair[1]);
-
-                        if (adr.equals(localAddress)) {
-                            handlerTable.put(adr, null);
-                            continue;
-                        }
-
-                        SocketHandler sh = new SocketHandler(address, port, (data) -> {
-                            String reply = processData(data);
-
-                            if (nextCommand.get() == Command.SHUFFLING && reply.equals(Command.OK.label())) {
-                                logger.log(Level.INFO, localAddress + " : Ok : " + adr);
-                                SocketIO sio = sios.get(adr);
-                                
-                                try {
-                                    sio.os.write(reply);
-                                    sio.os.newLine();
-                                    sio.os.flush();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-
-                        handlerTable.put(adr, sh);
-                        sh.start();
-                    }
-
                     for (int i = 0; i < addresses.length; ++i) {
-
                         if (addresses[i].equals(localAddress)) {
-                            sios.put(addresses[i], null);
-                            continue;
-                        }
+                            handlerTable.put(addresses[i], null);
 
-                        sios.put(addresses[i], new SocketIO(server.accept()));
+                            for (int j = i + 1; j < addresses.length; ++j) {
+                                String[] pair = addresses[j].split(":");
+                                String address = pair[0];
+                                Integer port = Integer.parseInt(pair[1]);
+
+                                createHandler(addresses[j], new Socket(address, port));
+                            }
+
+                            for (int j = addresses.length - 1; j > i; --j)
+                                handlerTable.get(addresses[j]).send(Command.END.label());
+
+                            break;
+                        } else {
+                            SocketHandler sh = createHandler(addresses[i], server.accept());
+
+                            do {
+                                line = sh.read();
+                            } while (line == null || !line.equals(Command.END.label()));
+                        }
                     }
 
                     while (!msio.is.readLine().equals(Command.END.label()))
                         ;
+
                     nextCommand.set(Command.MAPPING);
 
                 } else if (nextCommand.get() == Command.MAPPING && line.equals(Command.MAPPING.label())) {
@@ -175,6 +163,17 @@ public class Server {
                                 data = "";
                             }
                         }
+
+                        if (!data.isEmpty()) {
+                            String[] words = data.split("[\\s+|\\r?\\n|\\x00]");
+                            if (words.length > 0) {
+                                for (int i = 0; i < words.length; ++i) {
+                                    if (words[i].length() > 0)
+                                        shufflingWordCounter.compute(words[i], (key, val) -> (val == null) ? 1
+                                                : val + 1);
+                                }
+                            }
+                        }
                     }
 
                     nextCommand.set(Command.SHUFFLING);
@@ -182,18 +181,16 @@ public class Server {
                 } else if (nextCommand.get() == Command.SHUFFLING && line.equals(Command.SHUFFLING.label())) {
 
                     shufflingWordCounter.forEach((word, count) -> {
-                        Integer index = Math.abs(word.hashCode()) % sios.size();
+                        Integer index = Math.abs(word.hashCode()) % handlerTable.size();
 
                         try {
-                            SocketIO ios = new ArrayList<>(sios.values()).get(index);
+                            SocketHandler handler = new ArrayList<>(handlerTable.values()).get(index);
                             String data = word + "<=!=>" + count;
 
-                            if (ios == null) {
+                            if (handler == null) {
                                 processData(data);
                             } else {
-                                ios.os.write(data);
-                                ios.os.newLine();
-                                ios.os.flush();
+                                handler.send(data);
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -202,19 +199,11 @@ public class Server {
 
                     shufflingWordCounter.clear();
 
-                    sios.forEach((address, sio) -> {
-                        try {
-                            if (sio == null) {
-                                processData(Command.OK.label());
-                                return;
-                            }
+                    handlerTable.forEach((address, handler) -> {
+                        if (handler == null)
+                            return;
 
-                            sio.os.write(Command.END.label());
-                            sio.os.newLine();
-                            sio.os.flush();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        handler.send(Command.END.label());
                     });
 
                     while (nextCommand.get() == Command.SHUFFLING)
@@ -242,7 +231,8 @@ public class Server {
                 }
             }
 
-            // server.close();
+            server.close();
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -254,44 +244,50 @@ public class Server {
 
                 handler.stopRunning();
             });
-
-            sios.forEach((key, sio) -> {
-                try {
-                    if (sio == null)
-                        return;
-
-                    sio.is.close();
-                    sio.os.close();
-                    sio.socket.close();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            });
         }
 
         logger.log(Level.INFO, localAddress + " : Server programm stopped.");
     }
 
+    private SocketHandler createHandler(String address, Socket socket) throws UnknownHostException, IOException {
+
+        SocketHandler sh = new SocketHandler(socket, (data) -> {
+            String reply = processData(data);
+
+            if (!reply.isEmpty()) {
+                logger.log(Level.INFO, localAddress + " : Reply : " + reply + " to " + address);
+                handlerTable.get(address).send(reply);
+            }
+        });
+
+        handlerTable.put(address, sh);
+        sh.start();
+
+        return sh;
+    }
+
     private synchronized String processData(String data) {
         if (nextCommand.get() == Command.SHUFFLING) {
 
-            if(data.equals(Command.OK.label()))
-                logger.log(Level.INFO, localAddress + " : kek2 : " + data);
-
             if (data.equals(Command.END.label())) {
 
-                logger.log(Level.INFO, localAddress + " : kek1 : " + data);
+                endCount.incrementAndGet();
+                if (endCount.get() == (handlerTable.size() - 1) && okCount.get() == endCount.get()) {
+                    endCount.set(0);
+                    okCount.set(0);
+                    nextCommand.set(Command.QUIT);
+                }
 
                 return Command.OK.label();
             } else if (data.equals(Command.OK.label())) {
-                finishedCount.incrementAndGet();
 
-                if (finishedCount.compareAndSet(handlerTable.size(), 0)) {
-                    logger.log(Level.INFO, localAddress + " : Next state: " +
-                            Command.QUIT.label());
+                okCount.incrementAndGet();
+                if (okCount.get() == (handlerTable.size() - 1) && okCount.get() == endCount.get()) {
+                    endCount.set(0);
+                    okCount.set(0);
                     nextCommand.set(Command.QUIT);
                 }
+
             } else {
                 String[] pair = data.split("<=!=>");
 

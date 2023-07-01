@@ -5,18 +5,16 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 public class SocketHandler extends Thread {
     private SocketIO sio = null;
     private final AtomicBoolean running = new AtomicBoolean(true);
     private Consumer<String> callback = null;
 
-    public SocketHandler(String address, int port, Consumer<String> callback) throws UnknownHostException, IOException {
+    public SocketHandler(Socket socket, Consumer<String> callback) throws UnknownHostException, IOException {
         this.callback = callback;
-        this.sio = new SocketIO(new Socket(address, port));
-    }
-
-    public SocketHandler(Object address, String address2, int i) {
+        this.sio = new SocketIO(socket);
     }
 
     public boolean running() {
@@ -24,15 +22,25 @@ public class SocketHandler extends Thread {
     }
 
     public void stopRunning() {
+
+        try {
+            sio.socket.close();
+            sio.is.close();
+            sio.os.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
         this.running.set(false);
     }
 
     public synchronized String read() {
         String line = null;
-        
+
         try {
             line = this.sio.is.readLine();
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -44,7 +52,7 @@ public class SocketHandler extends Thread {
             this.sio.os.write(data);
             this.sio.os.newLine();
             this.sio.os.flush();
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -55,21 +63,20 @@ public class SocketHandler extends Thread {
             try {
                 String line = this.sio.is.readLine();
 
-                if (line != null && line.length() > 0)
+                if (line == null) {
+                    this.running.set(false);
+                    break;
+                }
+
+                if (!line.isEmpty())
                     callback.accept(line);
+                    
             } catch (Exception e) {
-                e.printStackTrace();
+                if (!this.sio.socket.isClosed())
+                    e.printStackTrace();
+
                 this.running.set(false);
             }
-        }
-
-        try {
-            sio.is.close();
-            sio.os.close();
-            sio.socket.close();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
     }
 }

@@ -23,7 +23,7 @@ public class MasterClient {
 
     public synchronized void addConnection(String address, int port) throws UnknownHostException, IOException {
         try {
-            handlerTable.put(address + ":" + port, new SocketHandler(address, port, (arg) -> {
+            handlerTable.put(address + ":" + port, new SocketHandler(new Socket(address, port), (arg) -> {
                 this.handleResponse(arg);
             }));
         } catch(Exception e) {

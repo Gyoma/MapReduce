@@ -7,7 +7,7 @@ remoteFolder="/tmp/$login/"
 masterProgram="master-program.jar"
 serverProgram="server-program.jar"
 
-computers=("tp-3a209-04:10333" "tp-3a209-05:10334")
+computers=("tp-3a209-04:10333" "tp-3a209-05:10334" "tp-3c41-05:10335" "tp-3c41-06:10335")
 masterComputer="tp-3a209-06:10341"
 
 #fileName="test.txt"
@@ -29,7 +29,7 @@ for item in ${computers[@]}; do
   command1=("ssh" "$login@$adr" "lsof -ti tcp:$port | xargs kill -9")
   command2=("ssh" "$login@$adr" "rm -rf $remoteFolder;mkdir $remoteFolder")
   command3=("scp" "target/$serverProgram" "$login@$adr:$remoteFolder$serverProgram")
-  command4=("ssh" "$login@$adr" "cd $remoteFolder;java -jar $serverProgram -p=\"$port\" > suka$adr:$port.txt")
+  command4=("ssh" "$login@$adr" "cd $remoteFolder;java -jar $serverProgram -p=\"$port\"")
   
   #echo ${command0[*]}
   #"${command0[@]}"
