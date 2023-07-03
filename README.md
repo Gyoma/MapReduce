@@ -20,10 +20,12 @@ First you need to start the servers, and then the master program. This is done a
 
 Data to be specified in the script:
 1. List of hosts and ports on which to run the servers
-2. Host and and port on which to run the master
+2. Host on which to run the master
 3. File from which to take data
 
 After altering the script you need just to launch it.
+
+The master connects on a given port to each server via a socket, so the master is a client in this sense.
 
 ### Splitting
 

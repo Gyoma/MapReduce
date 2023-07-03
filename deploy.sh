@@ -11,15 +11,12 @@ serverProgram="server-program.jar"
 serverComputers=("tp-3a209-04:10335" "tp-3a209-05:10335")
 
 # Master
-masterComputer="tp-3a209-06:10341"
+masterComputer="tp-3a209-06"
 
 # Path to a file to take data from
 fileName="/cal/commoncrawl/CC-MAIN-20230320175948-20230320205948-00274.warc.wet"
 
-masterAdr=${masterComputer%%:*}
-masterPort=${masterComputer#*:}
-
-# command0=("ssh-copy-id" "$login@$masterAdr")
+# command0=("ssh-copy-id" "$login@$masterComputer")
 # echo ${command0[*]}
 # "${command0[@]}"
 
@@ -48,17 +45,17 @@ for item in ${serverComputers[@]}; do
 done
 
 # The master launch commands
-command0=("ssh" "$login@$masterAdr" "lsof -ti tcp:$masterPort | xargs kill -9")
-command1=("ssh" "$login@$masterAdr" "rm -rf $remoteFolder;mkdir $remoteFolder")
-command2=("scp" "target/$masterProgram" "$login@$masterAdr:$remoteFolder$masterProgram")
-#command3=("scp" "$fileName" "$login@$masterAdr:$remoteFolder$fileName")
+# command0=("ssh" "$login@$masterComputer" "lsof -ti tcp:$masterPort | xargs kill -9")
+command1=("ssh" "$login@$masterComputer" "rm -rf $remoteFolder;mkdir $remoteFolder")
+command2=("scp" "target/$masterProgram" "$login@$masterComputer:$remoteFolder$masterProgram")
+#command3=("scp" "$fileName" "$login@$masterComputer:$remoteFolder$fileName")
 addresses=$(printf ";%s" "${serverComputers[@]}")
 addresses=${addresses:1}
-args="-path=\"$fileName\" -s=\"$addresses\" -p=\"$masterPort\""
-command4=("ssh" "$login@$masterAdr" "cd $remoteFolder;java -jar $masterProgram $args")
+args="-path=\"$fileName\" -s=\"$addresses\""
+command4=("ssh" "$login@$masterComputer" "cd $remoteFolder;java -jar $masterProgram $args")
 
-echo ${command0[*]}
-"${command0[@]}"
+#echo ${command0[*]}
+#"${command0[@]}"
 echo ${command1[*]}
 "${command1[@]}"
 echo ${command2[*]}
