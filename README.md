@@ -66,11 +66,11 @@ This ran on 300mb files each on Télécom's machines.
 
 The following results (averages of 5 runs) obtained:
 
-2 servers : 26401ms
-4 servers : 19146ms
-6 servers : 20888ms
-8 servers : 22013ms
-12 servers : 23601ms
+- 2 servers : 26401ms
+- 4 servers : 19146ms
+- 6 servers : 20888ms
+- 8 servers : 22013ms
+- 12 servers : 23601ms
 
 ![plot](./plot.png)
 
