@@ -16,7 +16,7 @@ All the communication (between the servers and between the servers and master) i
 
 ### Launch
 
-First you need to start the servers, and then the master program. This is done automatically through the deployment script called deploy.sh
+First you need to start the servers, and then the master program. This is done automatically through the deployment script called ``deploy.sh``
 
 Data to be specified in the script:
 1. List of hosts and ports on which to run the servers
