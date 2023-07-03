@@ -13,6 +13,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
+import org.apache.commons.lang3.time.StopWatch;
+
 import com.src.utils.LogFormatter;
 
 public class ClientProgram {
@@ -21,10 +23,6 @@ public class ClientProgram {
     static Logger logger = Logger.getLogger("Client");
 
     public static void main(String[] args) {
-
-        // args = new String[]{"-p=10325",
-        //         "-path=CC-MAIN-20230320211022-20230321001022-00511.warc.wet",
-        //         "-s=127.0.0.1:10333;127.0.0.1:10334"};
 
         LogManager.getLogManager().reset();
         logger.setLevel(Level.INFO);
@@ -44,17 +42,20 @@ public class ClientProgram {
         Options options = new Options();
         Option serversOpt = new Option("s", "servers", true, "");
         options.addOption(serversOpt);
+
         Option portOpt = new Option("p", "port", true, "");
         options.addOption(portOpt);
+
         Option pathOpt = new Option("path", "path", true, "");
         options.addOption(pathOpt);
 
         logger.log(Level.INFO, String.join(" ", args));
 
+        StopWatch watcher = new StopWatch();
+
         try {
             CommandLineParser parser = new DefaultParser();
             CommandLine cmd = parser.parse(options, args, false);
-            //Integer port = Integer.parseInt(cmd.getOptionValue("port", "10325"));
 
             logger.log(Level.INFO, "Starting client program...");
             logger.log(Level.INFO, "File path: " + cmd.getOptionValue("path", ""));
@@ -76,6 +77,8 @@ public class ClientProgram {
                 }
 
                 logger.log(Level.INFO, "Starting the master");
+                logger.log(Level.INFO, "Starting StopWatcher...");
+                watcher.start();
                 master.start();
             } else {
                 logger.log(Level.INFO, "Cannot find any addresses to process");
@@ -88,6 +91,8 @@ public class ClientProgram {
         logger.log(Level.INFO, "Stopping client program...");
         master.stop();
         logger.log(Level.INFO, "Client program stopped.");
+        watcher.stop();
+        logger.log(Level.INFO, "Total time : " + watcher.getTime() + "ms");
     }
 
 }

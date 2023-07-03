@@ -7,7 +7,8 @@ remoteFolder="/tmp/$login/"
 masterProgram="master-program.jar"
 serverProgram="server-program.jar"
 
-computers=("tp-3a209-04:10333" "tp-3a209-05:10334" "tp-3c41-05:10335" "tp-3c41-06:10335")
+computers=("tp-3a209-04:10333" "tp-3a209-05:10334" "tp-3c41-05:10335" "tp-3c41-06:10335" "tp-3b07-07:10335" "tp-3b07-09:10335")
+#computers=("tp-3a209-04:10333" "tp-3a209-05:10334")
 masterComputer="tp-3a209-06:10341"
 
 #fileName="test.txt"

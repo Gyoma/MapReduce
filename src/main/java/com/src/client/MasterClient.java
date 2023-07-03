@@ -1,19 +1,30 @@
 package com.src.client;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.src.utils.Command;
 import com.src.utils.SocketHandler;
 
 public class MasterClient {
-    Hashtable<String, SocketHandler> handlerTable = new Hashtable<String, SocketHandler>();
-    String resourcePath = "";
+    private Hashtable<String, SocketHandler> handlerTable = new Hashtable<String, SocketHandler>();
+    private String resourcePath = "";
+    private final AtomicReference<Command> nextCommand = new AtomicReference<>(Command.INITIALIZE);
+    private final AtomicInteger finishedCount = new AtomicInteger(0);
+    private TreeSet<Integer> counts = new TreeSet<>();
 
     static Logger logger = Logger.getLogger("Client");
 
@@ -26,7 +37,7 @@ public class MasterClient {
             handlerTable.put(address + ":" + port, new SocketHandler(new Socket(address, port), (arg) -> {
                 this.handleResponse(arg);
             }));
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -52,10 +63,9 @@ public class MasterClient {
             handlerTable.forEach((address, handler) -> {
                 handler.send("-a=" + address + " -s=" + String.join(";", addresses));
             });
-            // for (SocketHandler handler : handlers.values())
-            // handler.send(arg);
-            // sendToAll(new String[]{"asd", "asd"});
             sendToAll(Command.END.label());
+
+            nextCommand.set(Command.MAPPING);
         }
 
         // Splitting & Mapping
@@ -63,18 +73,63 @@ public class MasterClient {
             sendToAll(Command.MAPPING.label());
             splitData();
             sendToAll(Command.END.label());
+
+            nextCommand.set(Command.SHUFFLING);
         }
 
         // Shuffling & Reducing
         {
             sendToAll(Command.SHUFFLING.label());
+
+            nextCommand.set(Command.SORT_MAPPING);
+        }
+
+        // Sorting (Mapping)
+        {
+            sendToAll(Command.SORT_MAPPING.label());
+            while (nextCommand.get() == Command.SORT_MAPPING)
+                ;
+            sendToAll(Command.END.label());
+
+            nextCommand.set(Command.SORT_SHUFFLING);
+        }
+
+        // Sorting (Shuffling & Reducing)
+        {
+            sendToAll(Command.SORT_SHUFFLING.label());
+
+            Integer splitSize = counts.size() / handlerTable.size();
+            ArrayList<Integer> thresholds = new ArrayList<>(counts);
+
+            ArrayList<String> ranges = new ArrayList<>();
+            for (int i = 0; i < handlerTable.size(); ++i) {
+                Integer index = (i + 1) * splitSize - 1;
+                String threshold = Integer
+                        .toString((i == (handlerTable.size() - 1)) ? thresholds.get(thresholds.size() - 1)
+                                : thresholds.get(index));
+                String address = addresses.get(i);
+                ranges.add(address + "=" + threshold);
+            }
+
+            logger.log(Level.INFO, "master : The following ranging (server=frequency threshold) was calculated:");
+            ranges.forEach((range) -> {
+                logger.log(Level.INFO, "master: " + range);
+            });
+
+            sendToAll(String.join(" ", ranges));
+
+            nextCommand.set(Command.QUIT);
+        }
+
+        // Quit
+        {
             sendToAll(Command.QUIT.label());
         }
 
         handlerTable.forEach((address, handler) -> {
             String line = handler.read();
-            while (line != null && !line.equals(Command.END.label()))
-                ;
+
+            while (line != null && !line.equals(Command.END.label()));
         });
     }
 
@@ -84,14 +139,19 @@ public class MasterClient {
         });
     }
 
-    public synchronized String handleResponse(String content) {
-        //lock.lock();
+    public synchronized String handleResponse(String data) {
 
-        try {
-            // ...
-        } finally {
-            //if (lock.isHeldByCurrentThread())
-            //    lock.unlock();
+        if (nextCommand.get() == Command.SORT_MAPPING) {
+            String[] range = data.split(";");
+
+            for (int i = 0; i < range.length; ++i)
+                counts.add(Integer.parseInt(range[i]));
+
+            finishedCount.incrementAndGet();
+            if (finishedCount.get() == handlerTable.size()) {
+                finishedCount.set(0);
+                nextCommand.set(Command.SORT_SHUFFLING);
+            }
         }
 
         return "";
@@ -125,15 +185,12 @@ public class MasterClient {
                 } else {
                     StringBuilder sb = new StringBuilder(new String(buffer));
 
-                    char ch = '0';
-                    do {
-                        ch = (char) fileReader.read();
-
-                        if (ch == -1)
-                            break;
-
+                    // Get the whole word
+                    char ch = (char) fileReader.read();
+                    while (ch != ' ' && ch != '\n') {
                         sb.append(ch);
-                    } while (ch != ' ' && ch != '\n');
+                        ch = (char) fileReader.read();
+                    }
 
                     data = sb.toString();
                 }

@@ -5,7 +5,6 @@
   <artifactId>project</artifactId>
   <name>project</name>
   <version>1.0</version>
-  <url>http://www.example.com</url>
   <build>
     <plugins>
       <plugin>

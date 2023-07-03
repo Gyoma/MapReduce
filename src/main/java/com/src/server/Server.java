@@ -8,9 +8,12 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.TreeMap;
+import java.util.Map.Entry;
+import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -23,6 +26,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 import com.src.utils.Command;
 import com.src.utils.LogFormatter;
@@ -32,13 +36,21 @@ import com.src.utils.SocketIO;
 public class Server {
     private HashMap<String, SocketHandler> handlerTable = new HashMap<String, SocketHandler>();
     private HashMap<String, Integer> shufflingWordCounter = new HashMap<String, Integer>();
-    private HashMap<String, Integer> wordCounter = new HashMap<String, Integer>();
+    private HashMap<String, Integer> mappingWordCounter = new HashMap<String, Integer>();
+
+    private TreeMap<Integer, ArrayList<String>> sortMappingWordCounter = new TreeMap<Integer, ArrayList<String>>();
+    private TreeMap<Integer, ArrayList<String>> sortShufflingWordCounter = new TreeMap<Integer, ArrayList<String>>();
+
     private final AtomicInteger endCount = new AtomicInteger(0);
     private final AtomicInteger okCount = new AtomicInteger(0);
     private final AtomicReference<Command> nextCommand = new AtomicReference<>(Command.INITIALIZE);
+
     private Logger logger = Logger.getLogger("Server");
-    private String localAddress = null;
+    private String localAddress = "";
     private String[] args = null;
+
+    private Options options = new Options();
+    private CommandLineParser parser = new DefaultParser();
 
     public Server(String[] args) {
         this.args = args.clone();
@@ -51,7 +63,7 @@ public class Server {
         logger.addHandler(new ConsoleHandler());
 
         try {
-            Handler fileHandler = new FileHandler("./client.log", 2000, 5);
+            Handler fileHandler = new FileHandler("./server.log", 2000, 5);
             logger.addHandler(fileHandler);
         } catch (Exception e) {
             e.printStackTrace();
@@ -62,25 +74,25 @@ public class Server {
 
         ServerSocket server = null;
 
-        Options options = new Options();
         Option portOpt = new Option("p", "port", true, "");
         options.addOption(portOpt);
+
         Option serversOpt = new Option("s", "servers", true, "");
         options.addOption(serversOpt);
+
         Option addressOpt = new Option("a", "address", true, "");
         options.addOption(addressOpt);
+
         Option splitSizeOpt = new Option("sp", "splitsize", true, "");
         options.addOption(splitSizeOpt);
 
-        Option wordOpt = new Option("w", "word", true, "");
-        options.addOption(wordOpt);
+        Option wordsOpt = new Option("w", "words", true, "");
+        options.addOption(wordsOpt);
+
         Option countOpt = new Option("c", "count", true, "");
         options.addOption(countOpt);
 
-        logger.log(Level.INFO, String.join(" ", args));
-
         try {
-            CommandLineParser parser = new DefaultParser();
             CommandLine cmd = parser.parse(options, args, false);
             Integer localPort = Integer.parseInt(cmd.getOptionValue("port", "10325"));
 
@@ -90,15 +102,20 @@ public class Server {
             SocketIO msio = new SocketIO(server.accept());
 
             while (true) {
-                logger.log(Level.INFO, (localAddress == null ? "" : localAddress) + " : Waiting for the master");
+                logger.log(Level.INFO, localAddress + " : Waiting for the master");
                 String line = msio.is.readLine();
-                logger.log(Level.INFO, (localAddress == null ? "" : localAddress) + " : From master: " + line);
+                logger.log(Level.INFO, localAddress + " : From master: " + line);
 
-                if (nextCommand.get() == Command.INITIALIZE && line.equals(Command.INITIALIZE.label())) {
+                if (line == null || (nextCommand.get() == Command.QUIT && line.equals(Command.QUIT.label()))) {
+                    msio.os.write(Command.END.label());
+                    msio.os.newLine();
+                    msio.os.flush();
+                    break;
+                } else if (nextCommand.get() == Command.INITIALIZE && line.equals(Command.INITIALIZE.label())) {
 
                     // List of other servers
                     line = msio.is.readLine();
-                    logger.log(Level.INFO, (localAddress == null ? "" : localAddress) + "From master: " + line);
+                    logger.log(Level.INFO, localAddress + " : From master: " + line);
 
                     cmd = parser.parse(options, line.split(" "), false);
                     localAddress = cmd.getOptionValue("address");
@@ -154,7 +171,7 @@ public class Server {
                             if (words.length > 0) {
                                 for (int i = 0; i < words.length - 1; ++i) {
                                     if (words[i].length() > 0)
-                                        shufflingWordCounter.compute(words[i], (key, val) -> (val == null) ? 1
+                                        mappingWordCounter.compute(words[i], (key, val) -> (val == null) ? 1
                                                 : val + 1);
                                 }
 
@@ -164,12 +181,13 @@ public class Server {
                             }
                         }
 
+                        // If some data left
                         if (!data.isEmpty()) {
                             String[] words = data.split("[\\s+|\\r?\\n|\\x00]");
                             if (words.length > 0) {
                                 for (int i = 0; i < words.length; ++i) {
                                     if (words[i].length() > 0)
-                                        shufflingWordCounter.compute(words[i], (key, val) -> (val == null) ? 1
+                                        mappingWordCounter.compute(words[i], (key, val) -> (val == null) ? 1
                                                 : val + 1);
                                 }
                             }
@@ -180,7 +198,7 @@ public class Server {
 
                 } else if (nextCommand.get() == Command.SHUFFLING && line.equals(Command.SHUFFLING.label())) {
 
-                    shufflingWordCounter.forEach((word, count) -> {
+                    mappingWordCounter.forEach((word, count) -> {
                         Integer index = Math.abs(word.hashCode()) % handlerTable.size();
 
                         try {
@@ -197,7 +215,7 @@ public class Server {
                         }
                     });
 
-                    shufflingWordCounter.clear();
+                    mappingWordCounter.clear();
 
                     handlerTable.forEach((address, handler) -> {
                         if (handler == null)
@@ -209,25 +227,88 @@ public class Server {
                     while (nextCommand.get() == Command.SHUFFLING)
                         ;
 
-                } else if (line == null || (nextCommand.get() == Command.QUIT && line.equals(Command.QUIT.label()))) {
-                    BufferedWriter os = new BufferedWriter(new FileWriter("res.txt"));
-
-                    wordCounter.forEach((word, count) -> {
-                        try {
-                            os.write(word + " " + Integer.toString(count));
-                            os.newLine();
-                            os.flush();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                } else if (nextCommand.get() == Command.SORT_MAPPING && line.equals(Command.SORT_MAPPING.label())) {
+                    shufflingWordCounter.forEach((word, count) -> {
+                        if (sortMappingWordCounter.containsKey(count)) {
+                            sortMappingWordCounter.get(count).add(word);
+                        } else {
+                            sortMappingWordCounter.put(count, new ArrayList<String>() {
+                                {
+                                    add(word);
+                                }
+                            });
                         }
                     });
 
-                    os.close();
+                    shufflingWordCounter.clear();
 
-                    msio.os.write(Command.END.label());
+                    StringJoiner joiner = new StringJoiner(";");
+                    sortMappingWordCounter.keySet().forEach((val) -> {
+                        joiner.add(Integer.toString(val));
+                    });
+
+                    msio.os.write(joiner.toString());
                     msio.os.newLine();
                     msio.os.flush();
-                    break;
+
+                    while (!msio.is.readLine().equals(Command.END.label()))
+                        ;
+
+                    nextCommand.set(Command.SORT_SHUFFLING);
+
+                } else if (nextCommand.get() == Command.SORT_SHUFFLING && line.equals(Command.SORT_SHUFFLING.label())) {
+
+                    TreeMap<Integer, String> thresholds = new TreeMap<>();
+
+                    line = msio.is.readLine();
+
+                    String[] pairs = line.split(" ");
+                    for (String pair : pairs) {
+                        String[] data = pair.split("=");
+                        String address = data[0];
+                        Integer threshold = Integer.parseInt(data[1]);
+
+                        thresholds.put(threshold, address);
+                    }
+
+                    Iterator<Entry<Integer, String>> thIt = thresholds.entrySet().iterator();
+                    Entry<Integer, String> thEntry = thIt.next();
+
+                    Iterator<Entry<Integer, ArrayList<String>>> wIt = sortMappingWordCounter.entrySet().iterator();
+                    while (wIt.hasNext()) {
+                        Entry<Integer, ArrayList<String>> wEntry = wIt.next();
+                        Integer count = wEntry.getKey();
+                        ArrayList<String> words = wEntry.getValue();
+
+                        while (thEntry.getKey() < count)
+                            thEntry = thIt.next();
+
+                        String data = "-w=" + String.join("<=!=>", words);
+                        data = "-c=" + Integer.toString(count) + " " + data;
+
+                        SocketHandler handler = handlerTable.get(thEntry.getValue());
+
+                        if (handler == null) {
+                            processData(data);
+                        } else {
+                            handler.send(data);
+                        }
+                    }
+
+                    sortMappingWordCounter.clear();
+
+                    handlerTable.forEach((address, handler) -> {
+                        if (handler == null)
+                            return;
+
+                        handler.send(Command.END.label());
+                    });
+
+                    while (nextCommand.get() == Command.SORT_SHUFFLING)
+                        ;
+
+                } else {
+                    logger.log(Level.INFO, localAddress + " : Unexpected data line : " + line);
                 }
             }
 
@@ -255,7 +336,7 @@ public class Server {
             String reply = processData(data);
 
             if (!reply.isEmpty()) {
-                logger.log(Level.INFO, localAddress + " : Reply : " + reply + " to " + address);
+                logger.log(Level.INFO, localAddress + " : Reply " + reply + " to " + address);
                 handlerTable.get(address).send(reply);
             }
         });
@@ -266,27 +347,35 @@ public class Server {
         return sh;
     }
 
+    private synchronized void processEndCounter(Command nextCommand) {
+        endCount.incrementAndGet();
+        if (endCount.get() == (handlerTable.size() - 1) && okCount.get() == endCount.get()) {
+            endCount.set(0);
+            okCount.set(0);
+            this.nextCommand.set(nextCommand);
+        }
+    }
+
+    private synchronized void processOkCounter(Command nextCommand) {
+        okCount.incrementAndGet();
+        if (okCount.get() == (handlerTable.size() - 1) && okCount.get() == endCount.get()) {
+            endCount.set(0);
+            okCount.set(0);
+            this.nextCommand.set(nextCommand);
+        }
+    }
+
     private synchronized String processData(String data) {
         if (nextCommand.get() == Command.SHUFFLING) {
 
             if (data.equals(Command.END.label())) {
 
-                endCount.incrementAndGet();
-                if (endCount.get() == (handlerTable.size() - 1) && okCount.get() == endCount.get()) {
-                    endCount.set(0);
-                    okCount.set(0);
-                    nextCommand.set(Command.QUIT);
-                }
-
+                processEndCounter(Command.SORT_MAPPING);
                 return Command.OK.label();
+                
             } else if (data.equals(Command.OK.label())) {
 
-                okCount.incrementAndGet();
-                if (okCount.get() == (handlerTable.size() - 1) && okCount.get() == endCount.get()) {
-                    endCount.set(0);
-                    okCount.set(0);
-                    nextCommand.set(Command.QUIT);
-                }
+                processOkCounter(Command.SORT_MAPPING);
 
             } else {
                 String[] pair = data.split("<=!=>");
@@ -294,7 +383,44 @@ public class Server {
                 if (pair.length == 2) {
                     String word = pair[0];
                     Integer count = Integer.parseInt(pair[1]);
-                    wordCounter.compute(word, (key, val) -> (val == null ? count : val + count));
+                    shufflingWordCounter.compute(word, (key, val) -> (val == null ? count : val + count));
+                }
+            }
+        } else if (nextCommand.get() == Command.SORT_SHUFFLING) {
+
+            if (data.equals(Command.END.label())) {
+
+                processEndCounter(Command.QUIT);
+                return Command.OK.label();
+
+            } else if (data.equals(Command.OK.label())) {
+
+                processOkCounter(Command.QUIT);
+
+            } else {
+                try {
+                    CommandLine cmd = parser.parse(options, data.split(" "), false);
+
+                    Integer count = Integer.parseInt(cmd.getOptionValue("c"));
+                    String[] words = cmd.getOptionValue("w").split("<=!=>");
+
+                    for (int i = 0; i < words.length; ++i) {
+                        String word = words[i];
+
+                        if (sortShufflingWordCounter.containsKey(count)) {
+                            sortShufflingWordCounter.get(count).add(word);
+                        } else {
+                            sortShufflingWordCounter.put(count, new ArrayList<String>() {
+                                {
+                                    add(word);
+                                }
+                            });
+                        }
+                    }
+
+                } catch (ParseException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
                 }
             }
         }
