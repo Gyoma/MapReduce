@@ -62,6 +62,65 @@ All servers send the data that was generated during ``Shuffling & Reducing`` ste
 
 To make the program more verbose, the information necessary to understand the process is sent to the logger. This information is displayed in the console and saved to the master.log and server.log files for the master and each server, respectively.
 
+<details>
+  <summary>Log example</summary>
+
+  ```
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:29.470 : -path=/cal/commoncrawl/CC-MAIN-20230320175948-20230320205948-00274.warc.wet -s=tp-3a209-04:10335;tp-3a209-05:10335
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:29.620 : Starting client program...
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:29.621 : File path: /cal/commoncrawl/CC-MAIN-20230320175948-20230320205948-00274.warc.wet
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:29.641 : Processing the following addresses:
+tp-3a209-04:10335
+tp-3a209-05:10335
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:29.641 : Starting a handler for tp-3a209-04 on port 10335
+1::com.src.server.Server::start::03-07-2023 16:13:29.688 :  : Waiting for the master
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:29.692 : Starting a handler for tp-3a209-05 on port 10335
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:29.694 : Starting the master
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:29.694 : Starting StopWatcher...
+1::com.src.server.Server::start::03-07-2023 16:13:29.697 :  : Waiting for the master
+1::com.src.server.Server::start::03-07-2023 16:13:29.727 :  : From master: INITIALIZE
+1::com.src.server.Server::start::03-07-2023 16:13:29.728 :  : From master: -a=tp-3a209-04:10335 -s=tp-3a209-05:10335;tp-3a209-04:10335
+1::com.src.server.Server::start::03-07-2023 16:13:29.729 :  : From master: INITIALIZE
+1::com.src.server.Server::start::03-07-2023 16:13:29.730 :  : From master: -a=tp-3a209-05:10335 -s=tp-3a209-05:10335;tp-3a209-04:10335
+1::com.src.server.Server::start::03-07-2023 16:13:29.735 : tp-3a209-04:10335 : Waiting for the master
+1::com.src.server.Server::start::03-07-2023 16:13:29.736 : tp-3a209-05:10335 : Waiting for the master
+1::com.src.server.Server::start::03-07-2023 16:13:29.735 : tp-3a209-04:10335 : From master: MAPPING
+1::com.src.server.Server::start::03-07-2023 16:13:29.737 : tp-3a209-05:10335 : From master: MAPPING
+1::com.src.server.Server::start::03-07-2023 16:13:33.702 : tp-3a209-05:10335 : Bytes to get : 175331217
+1::com.src.server.Server::start::03-07-2023 16:13:39.584 : tp-3a209-04:10335 : Bytes to get : 175331216
+1::com.src.server.Server::start::03-07-2023 16:13:44.322 : tp-3a209-05:10335 : Waiting for the master
+1::com.src.server.Server::start::03-07-2023 16:13:44.324 : tp-3a209-05:10335 : From master: SHUFFLING
+1::com.src.server.Server::start::03-07-2023 16:13:44.592 : tp-3a209-04:10335 : Waiting for the master
+1::com.src.server.Server::start::03-07-2023 16:13:44.592 : tp-3a209-04:10335 : From master: SHUFFLING
+13::com.src.server.Server::lambda$createHandler$8::03-07-2023 16:13:47.935 : tp-3a209-05:10335 : Reply OK to tp-3a209-04:10335
+1::com.src.server.Server::start::03-07-2023 16:13:48.454 : tp-3a209-04:10335 : Waiting for the master
+13::com.src.server.Server::lambda$createHandler$8::03-07-2023 16:13:48.454 : tp-3a209-04:10335 : Reply OK to tp-3a209-05:10335
+1::com.src.server.Server::start::03-07-2023 16:13:48.454 : tp-3a209-04:10335 : From master: SORT_MAPPING
+1::com.src.server.Server::start::03-07-2023 16:13:48.457 : tp-3a209-05:10335 : Waiting for the master
+1::com.src.server.Server::start::03-07-2023 16:13:48.457 : tp-3a209-05:10335 : From master: SORT_MAPPING
+1::com.src.server.Server::start::03-07-2023 16:13:48.656 : tp-3a209-04:10335 : Waiting for the master
+1::com.src.server.Server::start::03-07-2023 16:13:48.656 : tp-3a209-04:10335 : From master: SORT_SHUFFLING
+1::com.src.server.Server::start::03-07-2023 16:13:48.657 : tp-3a209-05:10335 : Waiting for the master
+1::com.src.server.Server::start::03-07-2023 16:13:48.658 : tp-3a209-05:10335 : From master: SORT_SHUFFLING
+1::com.src.client.MasterClient::start::03-07-2023 16:13:48.659 : master : The following ranging (server=frequency threshold) was calculated:
+1::com.src.client.MasterClient::lambda$start$3::03-07-2023 16:13:48.660 : master: tp-3a209-05:10335=1770
+1::com.src.client.MasterClient::lambda$start$3::03-07-2023 16:13:48.660 : master: tp-3a209-04:10335=443147
+13::com.src.server.Server::lambda$createHandler$8::03-07-2023 16:13:49.688 : tp-3a209-05:10335 : Reply OK to tp-3a209-04:10335
+1::com.src.server.Server::start::03-07-2023 16:13:49.694 : tp-3a209-04:10335 : Waiting for the master
+13::com.src.server.Server::lambda$createHandler$8::03-07-2023 16:13:49.694 : tp-3a209-04:10335 : Reply OK to tp-3a209-05:10335
+1::com.src.server.Server::start::03-07-2023 16:13:49.695 : tp-3a209-04:10335 : From master: QUIT
+1::com.src.server.Server::start::03-07-2023 16:13:49.695 : tp-3a209-04:10335 : Stopping server program...
+1::com.src.server.Server::start::03-07-2023 16:13:49.697 : tp-3a209-05:10335 : Waiting for the master
+1::com.src.server.Server::start::03-07-2023 16:13:49.697 : tp-3a209-05:10335 : From master: QUIT
+1::com.src.server.Server::start::03-07-2023 16:13:49.697 : tp-3a209-05:10335 : Stopping server program...
+1::com.src.server.Server::start::03-07-2023 16:13:49.696 : tp-3a209-04:10335 : Server programm stopped.
+1::com.src.server.Server::start::03-07-2023 16:13:49.698 : tp-3a209-05:10335 : Server programm stopped.
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:49.723 : Stopping client program...
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:49.724 : Client program stopped.
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:49.725 : Total time : 20029ms
+  ```
+</details>
+
 ### Results
 
 This ran on 300mb files each on Télécom's machines.
