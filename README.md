@@ -117,7 +117,7 @@ tp-3a209-05:10335
 1::com.src.server.Server::start::03-07-2023 16:13:49.698 : tp-3a209-05:10335 : Server programm stopped.
 1::com.src.client.ClientProgram::main::03-07-2023 16:13:49.723 : Stopping client program...
 1::com.src.client.ClientProgram::main::03-07-2023 16:13:49.724 : Client program stopped.
-1::com.src.client.ClientProgram::main::03-07-2023 16:13:49.725 : Total time : 20029ms
+1::com.src.client.ClientProgram::main::03-07-2023 16:13:49.725 : Total time : 25629ms
   ```
 </details>
 
