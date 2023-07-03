@@ -44,7 +44,7 @@ Reduce step is applied automatically due to the HashMap specification.
 Note:
 I think it's important to describe here the communication protocol of this step.
 
-After a server has sent data to other server it must send an END command to let the receiver know it is done. The receiver must in turn respond with an OK command, letting know that it has received all the data. This is done to make the servers consistent before moving on to the next step.
+After a server has sent data to other server it must send an ``END`` command to let the receiver know it is done. The receiver must in turn respond with an ``OK`` command, letting know that it has received all the data. This is done to make the servers consistent before moving on to the next step.
 
 ### Sort. Mapping
 
@@ -54,7 +54,7 @@ The servers send their local word frequencies to the master, then the master div
 
 ### Sort. Shuffling & Reducing
 
-All servers send the data that was generated during Shuffling & Reducing step to the appropriate servers. The same communication protocol is used here.
+All servers send the data that was generated during ``Shuffling & Reducing`` step to the appropriate servers. The same communication protocol is used here.
 
 ### Progress output
 
