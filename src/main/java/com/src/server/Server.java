@@ -260,6 +260,11 @@ public class Server {
 
                     TreeMap<Integer, String> thresholds = new TreeMap<>();
 
+                    // The data we expect: server1=10 server2=19 server3=43
+                    // It means that
+                    // server1 is responsible for the [1, 10] subrange
+                    // server2 is responsible for the [11, 19] subrange
+                    // server3 is responsible for the [20, 43] subrange
                     line = msio.is.readLine();
 
                     String[] pairs = line.split(" ");

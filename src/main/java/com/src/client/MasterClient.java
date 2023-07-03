@@ -26,7 +26,7 @@ public class MasterClient {
     private final AtomicInteger finishedCount = new AtomicInteger(0);
     private TreeSet<Integer> counts = new TreeSet<>();
 
-    static Logger logger = Logger.getLogger("Client");
+    static Logger logger = Logger.getLogger("Master");
 
     public MasterClient(String resourcePath) {
         this.resourcePath = resourcePath;

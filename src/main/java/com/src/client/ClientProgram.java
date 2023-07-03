@@ -20,7 +20,7 @@ import com.src.utils.LogFormatter;
 public class ClientProgram {
 
     private static MasterClient master = null;
-    static Logger logger = Logger.getLogger("Client");
+    static Logger logger = Logger.getLogger("Master");
 
     public static void main(String[] args) {
 
@@ -30,7 +30,7 @@ public class ClientProgram {
         logger.addHandler(new ConsoleHandler());
 
         try {
-            Handler fileHandler = new FileHandler("./client.log", 2000, 5);
+            Handler fileHandler = new FileHandler("./master.log", 2000, 5);
             logger.addHandler(fileHandler);
         } catch (Exception e) {
             e.printStackTrace();
