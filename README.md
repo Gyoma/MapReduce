@@ -60,7 +60,7 @@ All servers send the data that was generated during ``Shuffling & Reducing`` ste
 
 To make the program more verbose, the information necessary to understand the process is sent to the logger. This information is displayed in the console and saved to the master.log and server.log files for the master and each server, respectively.
 
-## Results
+### Results
 
 This ran on 300mb files each on Télécom's machines.
 
@@ -74,4 +74,6 @@ The following results (averages of 5 runs) obtained:
 
 ![plot](./plot.png)
 
-## Conclusion
+### Conclusion
+
+As we can see the increase in the number of servers led to a performance boost only in the transition from 2 servers to 4 servers. A further increase in the number of servers did not lead to an increase in performance, but even the opposite has worsened it. I believe this is due to the fact that the size of the tested file is not enough to increase the speed, because at some point the time delay for the number of communications that need to be made exceeds the speed of execution on servers of the same amount of data.
