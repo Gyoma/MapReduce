@@ -8,7 +8,7 @@ masterProgram="master-program.jar"
 serverProgram="server-program.jar"
 
 # List of servers
-serverComputers=("tp-3a209-04:10333" "tp-3a209-05:10334" "tp-3c41-05:10335" "tp-3c41-06:10335" "tp-3b07-07:10335" "tp-3b07-09:10335")
+serverComputers=("tp-3a209-04:10335" "tp-3a209-05:10335")
 
 # Master
 masterComputer="tp-3a209-06:10341"

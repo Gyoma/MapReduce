@@ -19,8 +19,8 @@ All the communication (between the servers and between the servers and master) i
 First you need to start the servers, and then the master program. This is done automatically through the deployment script called deploy.sh
 
 Data to be specified in the script:
-1. List of hosts on which to run the servers
-2. Host on which to run the master
+1. List of hosts and ports on which to run the servers
+2. Host and and port on which to run the master
 3. File from which to take data
 
 After altering the script you need just to launch it.
@@ -62,6 +62,16 @@ To make the program more verbose, the information necessary to understand the pr
 
 ## Results
 
-This ran on 300mb files each.
+This ran on 300mb files each on Télécom's machines.
+
+The following results (averages of 5 runs) obtained:
+
+2 servers : 26401ms
+4 servers : 19146ms
+6 servers : 20888ms
+8 servers : 22013ms
+12 servers : 23601ms
+
+![plot](./plot.png)
 
 ## Conclusion
