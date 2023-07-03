@@ -68,7 +68,7 @@ The following results (averages of 5 runs) obtained:
 
 - 2 servers : 26401ms
 - 4 servers : 19146ms
-- 6 servers : 20888ms
+- 6 servers : 20388ms
 - 8 servers : 22013ms
 - 12 servers : 23601ms
 
